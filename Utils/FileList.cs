@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using Newtonsoft.Json;
+using SixLabors.ImageSharp;
+
 
 namespace RandomImageAPI.Utils
 {
@@ -8,32 +10,36 @@ namespace RandomImageAPI.Utils
         {
             var fileList = new List<FileInfoModel>();
 
-            // 获取所有文件
             string[] files = Directory.GetFiles(directoryPath, "*", SearchOption.AllDirectories);
 
             foreach (var file in files)
-            {
-                var fileInfo = new FileInfo(file);
-
-                // 添加到列表
-                fileList.Add(new FileInfoModel
                 {
-                    FileName = fileInfo.Name
-                });
-            }
+                    var fileInfo = new FileInfo(file);
+                    using (Image image = Image.Load(file))
+                    {
+                        int width = image.Width;
+                        int height = image.Height;
+
+                        double ratio = Math.Round((double)width / height, 2);
+
+                        fileList.Add(new FileInfoModel
+                        {
+                            FileName = fileInfo.Name,
+                            Ratio = ratio,
+
+                        });
+
+                    }
+
+                }
+            
 
             return fileList;
         }
 
-        // 保存文件信息为 JSON
         public static void SaveFilesToJson(List<FileInfoModel> files, string outputPath)
         {
-            // 序列化为 JSON
-            var options = new JsonSerializerOptions { WriteIndented = true }; // 格式化输出
-            string json = JsonSerializer.Serialize(files, options);
-
-            // 写入文件
-            File.WriteAllText(outputPath, json);
+            File.WriteAllText(outputPath, JsonConvert.SerializeObject(files, new JsonSerializerSettings { Formatting = Formatting.Indented }));
         }
     }
 }

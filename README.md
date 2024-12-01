@@ -35,4 +35,17 @@ or copy RandomImageAPI and ```file_list.json``` to other servers.
 
 Use this project in this way is only recommended for those who only has one server and only one domain and cannot create a new subdomain.
 
+## Other Arguments
 
+### ``` --Seperate=<type> ```
+
+```<type>``` can be ``` auto ``` , ``` manual ```.
+
+if ``` --Seperate=auto ``` , the API will automatically detect the device type (pc or mobile) and return them a image based on the image length-width ratio.
+
+else if ``` --Seperate=manual ``` , you need to manually divide your images into two folders under the ```$ImageFolder``` ,if $ImageFolder is default (./images) , then there should be two folders like:  
+``` ./images/pc/ ``` ``` ./images/mobile ```
+
+### ``` --APISeperated ```
+
+If this is enabled, you now cannot get images from ``` http://ip:port/api ``` but from ``` http://ip:port/api/pc ``` and ``` http://ip:port/api/mobile ```

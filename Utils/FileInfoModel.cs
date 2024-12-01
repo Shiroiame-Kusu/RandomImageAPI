@@ -3,7 +3,7 @@
     public class FileInfoModel
     {
         public string FileName { get; set; }
-        public string FileType { get; set; }
+        public double Ratio { get; set; }
 
     }
 }

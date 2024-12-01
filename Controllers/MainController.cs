@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Wangkanai.Detection.Models;
+using Wangkanai.Detection.Services;
 
 namespace RandomImageAPI.Controllers
 {
@@ -6,27 +8,108 @@ namespace RandomImageAPI.Controllers
     [Route("api")]
     public class MainController : Controller
     {
+        private readonly IDetectionService _detectionService;
+        public MainController(IDetectionService detectionService)
+        {
+            _detectionService = detectionService;
+        }
         public IActionResult Index()
         {
-            if (Program.SelfHosted) {
-                
-                var path = Path.Combine(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "images"), Program.ImageList[Random.Shared.Next(0, Program.ImageList.Count - 1)].FileName);
-                return File(System.IO.File.ReadAllBytes(path), GetContentType(path));
-            }
+            string devicetype = "";
+            var filename = Program.ImageList[Random.Shared.Next(0, Program.ImageList.Count)].FileName;
+            if (Program.APISeperated) return Ok(new
+            {
+                Message = "You Have Enabled the Different Device API Seperated. You cannot get image from here.",
+                Time = DateTime.Now
+            });
 
-            if (Program.DifferentDeviceSeperated)
+            if (Program.AutoSeperate != null)
             {   
-                return Ok(new
+
+                if ((bool)Program.AutoSeperate)
                 {
-                    Message = "How Dare You",
-                    Timestamp = DateTime.UtcNow
-                });
+                    if (_detectionService.Device.Type == Device.Mobile)
+                    {
+                        filename = Program.MobileImagesList[Random.Shared.Next(0, Program.MobileImagesList.Count)];
+                    }
+                    else
+                    {
+                        filename = Program.PcImagesList[Random.Shared.Next(0, Program.PcImagesList.Count)];
+                    }
+                }
+                else
+                {
+                    if (_detectionService.Device.Type == Device.Mobile)
+                    {
+                        devicetype = "mobile/";
+                    }
+                    else
+                    {
+                        devicetype = "pc/";
+                    }
+                }
+            }
+            
+            if (Program.SelfHosted) {
+
+                var path = Path.Combine(Program.ImageFolder, devicetype + filename);
+
+                return File(System.IO.File.ReadAllBytes(path), GetContentType(path));
+            } else
+            {
+                return Redirect($"{Program.RedirectURL}/images/{devicetype}{filename}");
+            }
+        }
+
+        [HttpGet("pc")]
+        public IActionResult PC()
+        {
+            var what = Program.AutoSeperate != null ? (!(bool)Program.AutoSeperate ? "pc/" : "") : "";
+            if (Program.APISeperated)
+            {var filename = Program.PcImagesList[Random.Shared.Next(0, Program.PcImagesList.Count)];
+                if (Program.SelfHosted)
+                {
+
+                    var path = Path.Combine(Path.Combine(Program.ImageFolder, what + filename));
+
+                    return File(System.IO.File.ReadAllBytes(path), GetContentType(path));
+                }
+                else
+                {
+                    return Redirect($"{Program.RedirectURL}/images/{what}{filename}");
+                }
             }
             else
             {
-                return Redirect(Program.RedirectURL +"");
+                return NotFound();
             }
         }
+        [HttpGet("mobile")]
+        public IActionResult Mobile()
+        {
+            var what = Program.AutoSeperate != null ? (!(bool)Program.AutoSeperate ? "mobile/" : "") : "";
+            if (Program.APISeperated)
+            {
+                var filename = Program.MobileImagesList[Random.Shared.Next(0, Program.MobileImagesList.Count)];
+                if (Program.SelfHosted)
+                {
+
+                    var path = Path.Combine(Path.Combine(Program.ImageFolder, what + filename));
+
+                    return File(System.IO.File.ReadAllBytes(path), GetContentType(path));
+                }
+                else
+                {
+                    return Redirect($"{Program.RedirectURL}/images/{what}{filename}");
+                }
+            }
+            else
+            {
+                return NotFound();
+            }
+        }
+
+
         private string GetContentType(string path)
         {
             var extension = Path.GetExtension(path).ToLowerInvariant();

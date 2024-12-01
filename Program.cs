@@ -11,16 +11,20 @@ namespace RandomImageAPI
         public static string? RedirectURL = null;
         public static string ImageFolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"images");
         public static bool SelfHosted = false;
-        public static bool DifferentDeviceSeperated = false;
+        public static bool APISeperated = false;
+        public static string ImageListFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "file_list.json");
         public static string? ImageListContent = null;
-        public static List<FileInfoModel> ImageList;
+        public static List<FileInfoModel> ImageList = new();
+        public static List<string> PcImagesList = new();
+        public static List<string> MobileImagesList = new();
+        public static bool? AutoSeperate = null;
         public static void Main(string[] args)
         {   
             for(int i=0; i<args.Length; i++)
             {
                 var a = () =>
                 {
-                    FileList.SaveFilesToJson(FileList.GetAllFiles(ImageFolder), AppDomain.CurrentDomain.BaseDirectory);
+                    FileList.SaveFilesToJson(FileList.GetAllFiles(ImageFolder), ImageListFilePath);
                 };
                 if (args[i].Contains("="))
                 {
@@ -29,11 +33,21 @@ namespace RandomImageAPI
                     string value = parts[1];
                     if (key.Equals("--RedirectURL"))
                     {
-                        if (value.Substring(value.Length - 1) != "/") value += "/";
+                        if (value.Substring(value.Length - 1) == "/") value = value.Substring(0,value.Length - 1);
                         RedirectURL = value;
                     }
                     else if (key.Equals("--ImageFolder")) {
                         ImageFolder = value;
+                    }else if (key.Equals("--Seperate"))
+                    {
+                        if (value == "auto")
+                        {
+                            AutoSeperate = true;
+                        }
+                        else
+                        {
+                            AutoSeperate = false;
+                        }
                     }
                 }
                 if(args[i] == "--GenerateList" || args[i] == "-g")
@@ -44,11 +58,26 @@ namespace RandomImageAPI
                 {
                     SelfHosted = true;
                     a();
+                }else if(args[i] == "--DeviceBasedAPISeperate")
+                {
+                    APISeperated = true;
                 }
             }
             if(RedirectURL == null && !SelfHosted) throw new NullReferenceException("You did not define --RedirectURL.");
-            ImageList = JsonConvert.DeserializeObject<List<FileInfoModel>>(File.Exists("file_list.json") ? File.ReadAllText("file_list.json") : throw new FileNotFoundException());
+            ImageList = JsonConvert.DeserializeObject<List<FileInfoModel>>(File.Exists(ImageListFilePath) ? File.ReadAllText(ImageListFilePath) : throw new FileNotFoundException("Generate the file list first!!!"));
+            foreach (var item in ImageList)
+            {
+                if (item.Ratio > 1)
+                {
+                    PcImagesList.Add(item.FileName);
+                }
+                else
+                {
+                    MobileImagesList.Add(item.FileName);
+                }
+            }
             WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+            builder.Services.AddDetection();
             builder.Services.AddControllers();
             builder.Services.AddControllers().AddNewtonsoftJson(options =>
             {

@@ -2,7 +2,7 @@
   "profiles": {
     "http": {
       "commandName": "Project",
-      "commandLineArgs": "--urls=http://localhost:5001",
+      "commandLineArgs": "--SelfHosted --Seperate=auto --APISeperated",
       "launchBrowser": true,
       "launchUrl": "api",
       "environmentVariables": {
