@@ -29,5 +29,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: RandomImageAPI
-        path: ${{ github.workspace }}\bin\Release\net9.0\linux-x64\publish
+        path: ${{ github.workspace }}/bin/Release/net9.0/linux-x64/publish
         if-no-files-found: ignore
