@@ -23,7 +23,7 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet publish -p:PublishSingleFile=true -p:IncludeContentInSingleFile=true -p:Configuration=Release --sc -p:IncludeAllContentForSelfExtract=true -p:EnableCompressionInSingleFile=true 
+      run: dotnet publish -p:PublishSingleFile=true -p:IncludeContentInSingleFile=true -p:Configuration=Release --sc -p:PublishAot=false -p:PublishTrimmed=false -p:IncludeAllContentForSelfExtract=true -p:EnableCompressionInSingleFile=true 
 
     - name: Upload API(Publish,Single File)
       uses: actions/upload-artifact@v4
