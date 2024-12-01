@@ -19,7 +19,8 @@ namespace RandomImageAPI
         public static List<string> MobileImagesList = new();
         public static bool? AutoSeperate = null;
         public static void Main(string[] args)
-        {   
+        {
+            bool ListFetchType = true;
             for(int i=0; i<args.Length; i++)
             {
                 var a = () =>
@@ -57,14 +58,17 @@ namespace RandomImageAPI
                 }else if(args[i] == "--SelfHosted")
                 {
                     SelfHosted = true;
-                    a();
-                }else if(args[i] == "--DeviceBasedAPISeperate")
+                    if (!File.Exists(ImageListFilePath)) a();
+                    
+
+                }
+                else if(args[i] == "--DeviceBasedAPISeperate")
                 {
                     APISeperated = true;
                 }
             }
             if(RedirectURL == null && !SelfHosted) throw new NullReferenceException("You did not define --RedirectURL.");
-            ImageList = JsonConvert.DeserializeObject<List<FileInfoModel>>(File.Exists(ImageListFilePath) ? File.ReadAllText(ImageListFilePath) : throw new FileNotFoundException("Generate the file list first!!!"));
+            ImageList = ListFetchType ? JsonConvert.DeserializeObject<List<FileInfoModel>>(File.Exists(ImageListFilePath) ? File.ReadAllText(ImageListFilePath) : throw new FileNotFoundException("Generate the file list first!!!")) : FileList.GetAllFiles(ImageFolder);
             foreach (var item in ImageList)
             {
                 if (item.Ratio > 1)

@@ -46,6 +46,6 @@ if ``` --Seperate=auto ``` , the API will automatically detect the device type (
 else if ``` --Seperate=manual ``` , you need to manually divide your images into two folders under the ```$ImageFolder``` ,if $ImageFolder is default (./images) , then there should be two folders like:  
 ``` ./images/pc/ ``` ``` ./images/mobile ```
 
-### ``` --APISeperated ```
+### ``` --DeviceBasedAPISeperate ```
 
 If this is enabled, you now cannot get images from ``` http://ip:port/api ``` but from ``` http://ip:port/api/pc ``` and ``` http://ip:port/api/mobile ```

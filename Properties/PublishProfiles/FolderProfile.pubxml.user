@@ -5,7 +5,7 @@ https://go.microsoft.com/fwlink/?LinkID=208121.
 <Project>
   <PropertyGroup>
     <_PublishTargetUrl>D:\GitHub\RandomImageAPI\bin\Release\net9.0\publish\</_PublishTargetUrl>
-    <History>True|2024-11-30T14:05:04.8866617Z||;False|2024-11-30T22:03:21.1869373+08:00||;</History>
+    <History>True|2024-12-01T03:53:07.1063422Z||;False|2024-12-01T11:35:47.2519157+08:00||;True|2024-11-30T22:05:04.8866617+08:00||;False|2024-11-30T22:03:21.1869373+08:00||;</History>
     <LastFailureDetails />
   </PropertyGroup>
 </Project>
