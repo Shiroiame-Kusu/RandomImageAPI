@@ -26,8 +26,8 @@ jobs:
       run: dotnet build -p:PublishSingleFile=true -p:IncludeContentInSingleFile=true -p:Configuration=Release --sc -p:IncludeAllContentForSelfExtract=true -p:EnableCompressionInSingleFile=true 
 
     - name: Upload API(Publish,Single File)
-        uses: actions/upload-artifact@v4
-        with:
-          name: RandomImageAPI
-          path: ${{ github.workspace }}\RandomImageAPI\bin\Release\net9.0\linux-x64\publish
-          if-no-files-found: ignore
+      uses: actions/upload-artifact@v4
+      with:
+        name: RandomImageAPI
+        path: ${{ github.workspace }}\RandomImageAPI\bin\Release\net9.0\linux-x64\publish
+        if-no-files-found: ignore
