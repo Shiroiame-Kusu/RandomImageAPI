@@ -59,7 +59,7 @@ namespace RandomImageAPI
                 {
                     SelfHosted = true;
                     if (!File.Exists(ImageListFilePath)) a();
-                    
+                    ListFetchType = false;
 
                 }
                 else if(args[i] == "--DeviceBasedAPISeperate")
