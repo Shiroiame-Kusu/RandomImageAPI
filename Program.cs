@@ -3,6 +3,8 @@ using Newtonsoft.Json;
 using RandomImageAPI.Utils;
 using System.Collections.Generic;
 using System.Net.Http.Json;
+using SixLabors.ImageSharp.Metadata.Profiles.Exif;
+using Wangkanai.Extensions;
 
 namespace RandomImageAPI
 {
@@ -18,6 +20,8 @@ namespace RandomImageAPI
         public static List<string> PcImagesList = new();
         public static List<string> MobileImagesList = new();
         public static bool? AutoSeperate = null;
+        public static bool ImageCompress = false;
+        public static int ImageCompressLevel;
         public static void Main(string[] args)
         {
             bool ListFetchType = true;
@@ -50,6 +54,30 @@ namespace RandomImageAPI
                             AutoSeperate = false;
                         }
                     }
+                    else if (key.Equals("--ImageCompressLevel"))
+                    {
+                        ImageCompress = true;
+                        switch (value) { 
+                            case "auto":
+                                ImageCompressLevel = 75;
+                                break;
+                            case "0":
+                                ImageCompressLevel = 100;
+                                break;
+                            case "1":
+                                ImageCompressLevel = 75;
+                                break;
+                            case "2":
+                                ImageCompressLevel = 60;
+                                break;
+                            case "3":
+                                ImageCompressLevel = 50;
+                                break;
+                            default:
+                                ImageCompressLevel = 75;
+                                break;
+                        }
+                    }
                 }
                 if(args[i] == "--GenerateList" || args[i] == "-g")
                 {
@@ -68,7 +96,10 @@ namespace RandomImageAPI
                 }
             }
             if(RedirectURL == null && !SelfHosted) throw new NullReferenceException("You did not define --RedirectURL.");
+#pragma warning disable CS8601
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
             ImageList = ListFetchType ? JsonConvert.DeserializeObject<List<FileInfoModel>>(File.Exists(ImageListFilePath) ? File.ReadAllText(ImageListFilePath) : throw new FileNotFoundException("Generate the file list first!!!")) : FileList.GetAllFiles(ImageFolder);
+
             foreach (var item in ImageList)
             {
                 if (item.Ratio > 1)
@@ -80,8 +111,11 @@ namespace RandomImageAPI
                     MobileImagesList.Add(item.FileName);
                 }
             }
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+#pragma warning restore CS8601
             WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
             builder.Services.AddDetection();
+#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
             builder.Services.AddControllers();
             builder.Services.AddControllers().AddNewtonsoftJson(options =>
             {
@@ -90,7 +124,7 @@ namespace RandomImageAPI
                 options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
                 options.SerializerSettings.Formatting = Formatting.Indented;
             });
-
+#pragma warning restore IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
             WebApplication app = builder.Build();
             app.UseRouting();
             app.MapControllers();

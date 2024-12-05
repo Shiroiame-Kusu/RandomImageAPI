@@ -1,4 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Formats.Webp;
+using System.Reflection.Metadata.Ecma335;
 using Wangkanai.Detection.Models;
 using Wangkanai.Detection.Services;
 
@@ -54,7 +57,15 @@ namespace RandomImageAPI.Controllers
 
                 var path = Path.Combine(Program.ImageFolder, devicetype + filename);
 
-                return File(System.IO.File.ReadAllBytes(path), GetContentType(path));
+
+                if ((bool)Program.ImageCompress)
+                {
+                    return File(ImageCompressed(path), "image/webp");
+                }
+                else
+                {
+                    return File(System.IO.File.ReadAllBytes(path), GetContentType(path));
+                }
             } else
             {
                 return Redirect($"{Program.RedirectURL}/images/{devicetype}{filename}");
@@ -72,7 +83,14 @@ namespace RandomImageAPI.Controllers
 
                     var path = Path.Combine(Path.Combine(Program.ImageFolder, what + filename));
 
-                    return File(System.IO.File.ReadAllBytes(path), GetContentType(path));
+                    if (Program.ImageCompress)
+                    {
+                        return File(ImageCompressed(path), "image/webp");
+                    }
+                    else
+                    {
+                        return File(System.IO.File.ReadAllBytes(path), GetContentType(path));
+                    }
                 }
                 else
                 {
@@ -96,7 +114,14 @@ namespace RandomImageAPI.Controllers
 
                     var path = Path.Combine(Path.Combine(Program.ImageFolder, what + filename));
 
-                    return File(System.IO.File.ReadAllBytes(path), GetContentType(path));
+                    if (Program.ImageCompress)
+                    {
+                        return File(ImageCompressed(path), "image/webp");
+                    }
+                    else
+                    {
+                        return File(System.IO.File.ReadAllBytes(path), GetContentType(path));
+                    }
                 }
                 else
                 {
@@ -109,7 +134,24 @@ namespace RandomImageAPI.Controllers
             }
         }
 
+        private Byte[] ImageCompressed(string path)
+        {
+            using (var image = Image.Load(path))
+            {
+                WebpEncoder encoder = new()
+                {
+                    Quality = Program.ImageCompressLevel,
+                };
 
+                using (var memoryStream = new MemoryStream())
+                {
+                    image.Save(memoryStream, encoder);
+                    memoryStream.Seek(0, SeekOrigin.Begin);
+                    Byte[] bytes = memoryStream.ToArray();
+                    return bytes;
+                }
+            }
+        }
         private string GetContentType(string path)
         {
             var extension = Path.GetExtension(path).ToLowerInvariant();
