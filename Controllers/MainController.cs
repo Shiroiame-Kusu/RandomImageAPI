@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Webp;
-using System.Reflection.Metadata.Ecma335;
+using SkiaSharp;
 using Wangkanai.Detection.Models;
 using Wangkanai.Detection.Services;
 
@@ -136,21 +136,38 @@ namespace RandomImageAPI.Controllers
 
         private Byte[] ImageCompressed(string path)
         {
-            using (var image = Image.Load(path))
-            {
-                WebpEncoder encoder = new()
-                {
-                    Quality = Program.ImageCompressLevel,
-                };
+#pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
+            Byte[] bytes = null;
+#pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
+            var a = () =>{
+                using var inputStream = System.IO.File.OpenRead(path);
+                using var bitmap = SKBitmap.Decode(inputStream);
+                using var image = SKImage.FromBitmap(bitmap);
+                using var webpData = image.Encode(SKEncodedImageFormat.Webp, Program.ImageCompressLevel);
+                if (System.IO.File.Exists(path + ".ccache")) System.IO.File.Delete(path + ".ccache");
+                bytes = webpData.ToArray();
+                System.IO.File.WriteAllBytes(path + ".ccache",bytes);
+            };
 
-                using (var memoryStream = new MemoryStream())
+            if (!System.IO.File.Exists(path + ".ccache")) {
+                a();
+            }
+            else
+            {
+                try
                 {
-                    image.Save(memoryStream, encoder);
-                    memoryStream.Seek(0, SeekOrigin.Begin);
-                    Byte[] bytes = memoryStream.ToArray();
-                    return bytes;
+                    using Image m = Image.Load(path + ".ccache");
+                    bytes = System.IO.File.ReadAllBytes(path + ".ccache");
+                }
+                catch
+                {
+                    a();
                 }
             }
+#pragma warning disable CS8603 // Possible null reference return.
+            return bytes;
+#pragma warning restore CS8603 // Possible null reference return.
+
         }
         private string GetContentType(string path)
         {
