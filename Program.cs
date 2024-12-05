@@ -65,12 +65,15 @@ namespace RandomImageAPI
                                 ImageCompressLevel = 100;
                                 break;
                             case "1":
-                                ImageCompressLevel = 75;
+                                ImageCompressLevel = 85;
                                 break;
                             case "2":
-                                ImageCompressLevel = 60;
+                                ImageCompressLevel = 75;
                                 break;
                             case "3":
+                                ImageCompressLevel = 60;
+                                break;
+                            case "4":
                                 ImageCompressLevel = 50;
                                 break;
                             default:
