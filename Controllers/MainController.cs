@@ -77,7 +77,8 @@ namespace RandomImageAPI.Controllers
         {
             var what = Program.AutoSeperate != null ? (!(bool)Program.AutoSeperate ? "pc/" : "") : "";
             if (Program.APISeperated)
-            {var filename = Program.PcImagesList[Random.Shared.Next(0, Program.PcImagesList.Count)];
+            {
+                var filename = Program.PcImagesList[Random.Shared.Next(0, Program.PcImagesList.Count)];
                 if (Program.SelfHosted)
                 {
 
@@ -133,41 +134,47 @@ namespace RandomImageAPI.Controllers
                 return NotFound();
             }
         }
-
+        static Byte[] bytes;
         private Byte[] ImageCompressed(string path)
         {
 #pragma warning disable CS8600 // Converting null literal or possible null value to non-nullable type.
-            Byte[] bytes = null;
+            bytes = null;
 #pragma warning restore CS8600 // Converting null literal or possible null value to non-nullable type.
-            var a = () =>{
-                using var inputStream = System.IO.File.OpenRead(path);
-                using var bitmap = SKBitmap.Decode(inputStream);
-                using var image = SKImage.FromBitmap(bitmap);
-                using var webpData = image.Encode(SKEncodedImageFormat.Webp, Program.ImageCompressLevel);
-                if (System.IO.File.Exists(path + ".ccache")) System.IO.File.Delete(path + ".ccache");
-                bytes = webpData.ToArray();
-                System.IO.File.WriteAllBytes(path + ".ccache",bytes);
-            };
-
             if (!System.IO.File.Exists(path + ".ccache")) {
-                a();
+                ImageCompressedA(path);
             }
             else
             {
                 try
                 {
-                    using Image m = Image.Load(path + ".ccache");
+                    using (var image = SKBitmap.Decode(path + ".ccache"))
+                    {
+                        if (image == null)
+                        {
+                            throw new Exception();
+                        }// 如果解码成功，则文件有效
+                    }
                     bytes = System.IO.File.ReadAllBytes(path + ".ccache");
                 }
                 catch
                 {
-                    a();
+                    ImageCompressedA(path);
                 }
             }
 #pragma warning disable CS8603 // Possible null reference return.
             return bytes;
 #pragma warning restore CS8603 // Possible null reference return.
 
+        }
+        private void ImageCompressedA(string path)
+        {
+            using var inputStream = System.IO.File.OpenRead(path);
+            using var bitmap = SKBitmap.Decode(inputStream);
+            using var image = SKImage.FromBitmap(bitmap);
+            using var webpData = image.Encode(SKEncodedImageFormat.Webp, Program.ImageCompressLevel);
+            if (System.IO.File.Exists(path + ".ccache")) System.IO.File.Delete(path + ".ccache");
+            bytes = webpData.ToArray();
+            System.IO.File.WriteAllBytes(path + ".ccache", bytes);
         }
         private string GetContentType(string path)
         {
