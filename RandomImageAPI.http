@@ -5,7 +5,3 @@ Accept: application/json
 
 ###
 
-GET {{RandomImageAPI_HostAddress}}/todos/1
-Accept: application/json
-
-###

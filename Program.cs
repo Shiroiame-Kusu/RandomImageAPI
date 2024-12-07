@@ -1,10 +1,6 @@
 using Newtonsoft.Json.Serialization;
 using Newtonsoft.Json;
 using RandomImageAPI.Utils;
-using System.Collections.Generic;
-using System.Net.Http.Json;
-using SixLabors.ImageSharp.Metadata.Profiles.Exif;
-using Wangkanai.Extensions;
 using RandomImageAPI.Impl;
 using System.Runtime.CompilerServices;
 using RandomImageAPI.Controllers;
@@ -94,7 +90,6 @@ namespace RandomImageAPI
                 {
                     SelfHosted = true;
                     if (!File.Exists(ImageListFilePath)) a();
-                    ListFetchType = false;
 
                 }
                 else if(args[i] == "--DeviceBasedAPISeperate")
@@ -129,7 +124,7 @@ namespace RandomImageAPI
                 if (item.Ratio > 1)
                 {
                     PcImagesList.Add(item.FileName);
-
+                    
                 }
                 else
                 {

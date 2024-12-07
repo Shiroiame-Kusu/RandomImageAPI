@@ -2,6 +2,7 @@
 using RandomImageAPI.Impl;
 using RandomImageAPI.Utils;
 using SkiaSharp;
+using System.Diagnostics;
 using Wangkanai.Detection.Models;
 using Wangkanai.Detection.Services;
 using File2 = System.IO.File;
@@ -28,7 +29,7 @@ namespace RandomImageAPI.Controllers
             var filename = Program.ImageList[Random.Shared.Next(0, Program.ImageList.Count)].FileName;
             if (Program.APISeperated) return Ok(new
             {
-                Message = "You Have Enabled the Different Device API Seperated. You cannot get image from here.",
+                Message = "You Have Enabled the Device Based API Seperating. You cannot get image from here.",
                 Time = DateTime.Now
             });
 
@@ -81,6 +82,8 @@ namespace RandomImageAPI.Controllers
         [HttpGet("pc")]
         public IActionResult PC()
         {
+            Stopwatch stopwatch = new();
+            stopwatch.Start();
             bytes2 = null;
             var what = Program.AutoSeperate != null ? (!(bool)Program.AutoSeperate ? "pc/" : "") : "";
             if (Program.APISeperated)
@@ -96,13 +99,12 @@ namespace RandomImageAPI.Controllers
                         
                         if (PCCaches.TryGetValue(filename, out bytes2))
                         {
-                            
                             return File(bytes2, "image/webp");
                         }
                         else
                         {
-
                             return File(ImageCompressed(path,Device.Desktop), "image/webp");
+                            
                         }
 
                     }
@@ -178,13 +180,23 @@ namespace RandomImageAPI.Controllers
                     {
                         if (image == null)
                         {
-                            throw new Exception();
-                        }// 如果解码成功，则文件有效
+                            File2.Delete(path + ".ccache");
+                            throw new Exception("Cache is broken, Will generate new one next time.");
+                        }
                     }
                     bytes = File2.ReadAllBytes(path + ".ccache");
+                    if(type == Device.Mobile)
+                    {
+                        MobileCaches.Add(Path.GetFileName(path),bytes);
+                    }
+                    else
+                    {
+                        PCCaches.Add(Path.GetFileName(path), bytes);
+                    }
                 }
-                catch
+                catch(Exception ex)
                 {
+                    Console.Write(ex);
                     ImageCompressedA(path,type);
                 }
             }
