@@ -4,6 +4,7 @@ using RandomImageAPI.Utils;
 using RandomImageAPI.Impl;
 using System.Runtime.CompilerServices;
 using RandomImageAPI.Controllers;
+using System.Diagnostics;
 
 namespace RandomImageAPI
 {
@@ -21,9 +22,32 @@ namespace RandomImageAPI
         public static bool? AutoSeperate = null;
         public static bool ImageCompress = false;
         public static int ImageCompressLevel;
+        private static bool AutoGC = false;
+        private static Dictionary<string, Task> Tasks = new();
         public static void Main(string[] args)
         {
+            Task task = new(() =>
+            {
+                int a = 1000;
+                while (true)
+                {
+                    a = 1000;
+                    var process = Process.GetCurrentProcess();
+                    long workingSet = process.WorkingSet64 / 1024 / 1024;
+                    if (workingSet > 1000)
+                    {
+                        GC.Collect();
+                        a = 500;
+                    }
+                    else if (workingSet > 500)
+                    {
+                        GC.Collect();
+                    }
+                    Task.Delay(a);
+                }
 
+            });
+            Tasks.Add("AutoGC", task);
             bool ListFetchType = true;
             for(int i=0; i<args.Length; i++)
             {
@@ -96,6 +120,9 @@ namespace RandomImageAPI
                 {
                     APISeperated = true;
                 }
+                else if (args[i] == "--AutoGC"){
+                    AutoGC = true;
+                }
             }
             if(RedirectURL == null && !SelfHosted) throw new NullReferenceException("You did not define --RedirectURL.");
 #pragma warning disable CS8601
@@ -131,9 +158,12 @@ namespace RandomImageAPI
                     MobileImagesList.Add(item.FileName);
                 }
             }
-
+            if(AutoGC) Tasks["AutoGC"].Start();
 #pragma warning restore CS8602 // Dereference of a possibly null reference.
 #pragma warning restore CS8601
+            
+            
+
             app.Run();
 
         }

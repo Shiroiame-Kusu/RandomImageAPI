@@ -17,13 +17,14 @@ namespace RandomImageAPI.Controllers
         private static List<MemoryStream> memoryStreams = new();
         private static Dictionary<string, Byte[]> PCCaches = new();
         private static Dictionary<string, Byte[]> MobileCaches = new();
+        private static Stopwatch stopwatch = new();
         public MainController(IDetectionService detectionService)
         {
             _detectionService = detectionService;
             ClassAccess.MainController = this;
 
         }
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
             string devicetype = "";
             var filename = Program.ImageList[Random.Shared.Next(0, Program.ImageList.Count)].FileName;
@@ -67,7 +68,7 @@ namespace RandomImageAPI.Controllers
 
                 if ((bool)Program.ImageCompress)
                 {
-                    return File(ImageCompressed(path, _detectionService.Device.Type), "image/webp");
+                    return File(await ImageCompressed(path, _detectionService.Device.Type), "image/webp");
                 }
                 else
                 {
@@ -80,10 +81,8 @@ namespace RandomImageAPI.Controllers
         }
         static Byte[]? bytes2 = null;
         [HttpGet("pc")]
-        public IActionResult PC()
+        public async Task<IActionResult> PC()
         {
-            Stopwatch stopwatch = new();
-            stopwatch.Start();
             bytes2 = null;
             var what = Program.AutoSeperate != null ? (!(bool)Program.AutoSeperate ? "pc/" : "") : "";
             if (Program.APISeperated)
@@ -99,11 +98,16 @@ namespace RandomImageAPI.Controllers
                         
                         if (PCCaches.TryGetValue(filename, out bytes2))
                         {
+                            if (stopwatch.ElapsedMilliseconds /1000 > 30) {
+                                GC.Collect();
+                                stopwatch.Restart();
+                            }
+                            
                             return File(bytes2, "image/webp");
                         }
                         else
                         {
-                            return File(ImageCompressed(path,Device.Desktop), "image/webp");
+                            return File(await ImageCompressed(path,Device.Desktop), "image/webp");
                             
                         }
 
@@ -126,7 +130,7 @@ namespace RandomImageAPI.Controllers
 
         static Byte[]? bytes3 = null;
         [HttpGet("mobile")]
-        public IActionResult Mobile()
+        public async Task<IActionResult> Mobile()
         {   
             bytes3 = null;
             var what = Program.AutoSeperate != null ? (!(bool)Program.AutoSeperate ? "mobile/" : "") : "";
@@ -142,12 +146,16 @@ namespace RandomImageAPI.Controllers
                     {
                         if (MobileCaches.TryGetValue(filename, out bytes3))
                         {
-
+                            if (stopwatch.ElapsedMilliseconds / 1000 > 30)
+                            {
+                                GC.Collect();
+                                stopwatch.Restart();
+                            }
                             return File(bytes3, "image/webp");
                         }
                         else
                         {
-                            return File(ImageCompressed(path, Device.Mobile), "image/webp");
+                            return File(await ImageCompressed(path, Device.Mobile), "image/webp");
                         }
                     }
                     else
@@ -166,7 +174,7 @@ namespace RandomImageAPI.Controllers
             }
         }
         static Byte[]? bytes;
-        private static Byte[] ImageCompressed(string path,Device type)
+        private static async Task<Byte[]> ImageCompressed(string path,Device type)
         {
             bytes = null;
             if (!File2.Exists(path + ".ccache")) {
@@ -205,11 +213,9 @@ namespace RandomImageAPI.Controllers
 #pragma warning restore CS8603 // Possible null reference return.
 
         }
-        private static void ImageCompressedA(string path, Device type)
+        private static async void ImageCompressedA(string path, Device type)
         {
-            using var inputStream = File2.OpenRead(path);
-            using var bitmap = SKBitmap.Decode(inputStream);
-            using var webpData = SKImage.FromBitmap(bitmap).Encode(SKEncodedImageFormat.Webp, Program.ImageCompressLevel);
+            using var webpData = SKImage.FromBitmap(SKBitmap.Decode(File2.OpenRead(path))).Encode(SKEncodedImageFormat.Webp, Program.ImageCompressLevel);
             if (File2.Exists(path + ".ccache")) File2.Delete(path + ".ccache");
             bytes = webpData.ToArray();
             File2.WriteAllBytes(path + ".ccache", bytes);
@@ -221,6 +227,7 @@ namespace RandomImageAPI.Controllers
             {
                 MobileCaches.Add(path, bytes);
             }
+            GC.Collect();
         }
         private static string GetContentType(string path)
         {
