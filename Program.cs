@@ -5,6 +5,9 @@ using System.Collections.Generic;
 using System.Net.Http.Json;
 using SixLabors.ImageSharp.Metadata.Profiles.Exif;
 using Wangkanai.Extensions;
+using RandomImageAPI.Impl;
+using System.Runtime.CompilerServices;
+using RandomImageAPI.Controllers;
 
 namespace RandomImageAPI
 {
@@ -24,6 +27,7 @@ namespace RandomImageAPI
         public static int ImageCompressLevel;
         public static void Main(string[] args)
         {
+
             bool ListFetchType = true;
             for(int i=0; i<args.Length; i++)
             {
@@ -102,20 +106,8 @@ namespace RandomImageAPI
 #pragma warning disable CS8601
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
             ImageList = ListFetchType ? JsonConvert.DeserializeObject<List<FileInfoModel>>(File.Exists(ImageListFilePath) ? File.ReadAllText(ImageListFilePath) : throw new FileNotFoundException("Generate the file list first!!!")) : FileList.GetAllFiles(ImageFolder);
+            
 
-            foreach (var item in ImageList)
-            {
-                if (item.Ratio > 1)
-                {
-                    PcImagesList.Add(item.FileName);
-                }
-                else
-                {
-                    MobileImagesList.Add(item.FileName);
-                }
-            }
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-#pragma warning restore CS8601
             WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
             builder.Services.AddDetection();
 #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
@@ -131,6 +123,22 @@ namespace RandomImageAPI
             WebApplication app = builder.Build();
             app.UseRouting();
             app.MapControllers();
+
+            foreach (var item in ImageList)
+            {
+                if (item.Ratio > 1)
+                {
+                    PcImagesList.Add(item.FileName);
+
+                }
+                else
+                {
+                    MobileImagesList.Add(item.FileName);
+                }
+            }
+
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
+#pragma warning restore CS8601
             app.Run();
 
         }
