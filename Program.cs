@@ -5,6 +5,7 @@ using RandomImageAPI.Impl;
 using System.Runtime.CompilerServices;
 using RandomImageAPI.Controllers;
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 
 namespace RandomImageAPI
 {
@@ -31,17 +32,18 @@ namespace RandomImageAPI
                 int a = 1000;
                 while (true)
                 {
-                    a = 1000;
+                    a = 10000;
                     var process = Process.GetCurrentProcess();
                     long workingSet = process.WorkingSet64 / 1024 / 1024;
                     if (workingSet > 1000)
                     {
                         GC.Collect();
-                        a = 500;
+                        a = 5000;
                     }
                     else if (workingSet > 500)
                     {
                         GC.Collect();
+                        a = 10000;
                     }
                     Task.Delay(a);
                 }
@@ -124,13 +126,15 @@ namespace RandomImageAPI
                     AutoGC = true;
                 }
             }
-            if(RedirectURL == null && !SelfHosted) throw new NullReferenceException("You did not define --RedirectURL.");
+            WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+            builder.Logging.AddFile(o => o.RootPath = builder.Environment.ContentRootPath);
+            if (RedirectURL == null && !SelfHosted) throw new NullReferenceException("You did not define --RedirectURL.");
 #pragma warning disable CS8601
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
             ImageList = ListFetchType ? JsonConvert.DeserializeObject<List<FileInfoModel>>(File.Exists(ImageListFilePath) ? File.ReadAllText(ImageListFilePath) : throw new FileNotFoundException("Generate the file list first!!!")) : FileList.GetAllFiles(ImageFolder);
             
 
-            WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
+            
             builder.Services.AddDetection();
 #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
             builder.Services.AddControllers();

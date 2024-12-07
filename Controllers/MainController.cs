@@ -2,7 +2,9 @@
 using RandomImageAPI.Impl;
 using RandomImageAPI.Utils;
 using SkiaSharp;
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Linq;
 using Wangkanai.Detection.Models;
 using Wangkanai.Detection.Services;
 using File2 = System.IO.File;
@@ -15,7 +17,7 @@ namespace RandomImageAPI.Controllers
     {
         private readonly IDetectionService _detectionService;
         private static List<MemoryStream> memoryStreams = new();
-        private static Dictionary<string, Byte[]> PCCaches = new();
+        private static ConcurrentDictionary<string, Byte[]> PCCaches = new();
         private static Dictionary<string, Byte[]> MobileCaches = new();
         private static Stopwatch stopwatch = new();
         public MainController(IDetectionService detectionService)
@@ -26,6 +28,7 @@ namespace RandomImageAPI.Controllers
         }
         public async Task<IActionResult> Index()
         {
+            LogInfo(Request);
             string devicetype = "";
             var filename = Program.ImageList[Random.Shared.Next(0, Program.ImageList.Count)].FileName;
             if (Program.APISeperated) return Ok(new
@@ -66,9 +69,9 @@ namespace RandomImageAPI.Controllers
                 var path = Path.Combine(Program.ImageFolder, devicetype + filename);
 
 
-                if ((bool)Program.ImageCompress)
+                if (Program.ImageCompress)
                 {
-                    return File(await ImageCompressed(path, _detectionService.Device.Type), "image/webp");
+                    return File(ImageCompressed(path, _detectionService.Device.Type), "image/webp");
                 }
                 else
                 {
@@ -83,6 +86,7 @@ namespace RandomImageAPI.Controllers
         [HttpGet("pc")]
         public async Task<IActionResult> PC()
         {
+            LogInfo(Request);
             bytes2 = null;
             var what = Program.AutoSeperate != null ? (!(bool)Program.AutoSeperate ? "pc/" : "") : "";
             if (Program.APISeperated)
@@ -98,16 +102,11 @@ namespace RandomImageAPI.Controllers
                         
                         if (PCCaches.TryGetValue(filename, out bytes2))
                         {
-                            if (stopwatch.ElapsedMilliseconds /1000 > 30) {
-                                GC.Collect();
-                                stopwatch.Restart();
-                            }
-                            
                             return File(bytes2, "image/webp");
                         }
                         else
                         {
-                            return File(await ImageCompressed(path,Device.Desktop), "image/webp");
+                            return File(ImageCompressed(path,Device.Desktop), "image/webp");
                             
                         }
 
@@ -131,7 +130,8 @@ namespace RandomImageAPI.Controllers
         static Byte[]? bytes3 = null;
         [HttpGet("mobile")]
         public async Task<IActionResult> Mobile()
-        {   
+        {
+            LogInfo(Request);
             bytes3 = null;
             var what = Program.AutoSeperate != null ? (!(bool)Program.AutoSeperate ? "mobile/" : "") : "";
             if (Program.APISeperated)
@@ -146,16 +146,11 @@ namespace RandomImageAPI.Controllers
                     {
                         if (MobileCaches.TryGetValue(filename, out bytes3))
                         {
-                            if (stopwatch.ElapsedMilliseconds / 1000 > 30)
-                            {
-                                GC.Collect();
-                                stopwatch.Restart();
-                            }
                             return File(bytes3, "image/webp");
                         }
                         else
                         {
-                            return File(await ImageCompressed(path, Device.Mobile), "image/webp");
+                            return File(ImageCompressed(path, Device.Mobile), "image/webp");
                         }
                     }
                     else
@@ -174,7 +169,7 @@ namespace RandomImageAPI.Controllers
             }
         }
         static Byte[]? bytes;
-        private static async Task<Byte[]> ImageCompressed(string path,Device type)
+        private static Byte[] ImageCompressed(string path,Device type)
         {
             bytes = null;
             if (!File2.Exists(path + ".ccache")) {
@@ -199,7 +194,7 @@ namespace RandomImageAPI.Controllers
                     }
                     else
                     {
-                        PCCaches.Add(Path.GetFileName(path), bytes);
+                        PCCaches.TryAdd(Path.GetFileName(path), bytes);
                     }
                 }
                 catch(Exception ex)
@@ -213,19 +208,21 @@ namespace RandomImageAPI.Controllers
 #pragma warning restore CS8603 // Possible null reference return.
 
         }
-        private static async void ImageCompressedA(string path, Device type)
+        private static void ImageCompressedA(string path, Device type)
         {
             using var webpData = SKImage.FromBitmap(SKBitmap.Decode(File2.OpenRead(path))).Encode(SKEncodedImageFormat.Webp, Program.ImageCompressLevel);
             if (File2.Exists(path + ".ccache")) File2.Delete(path + ".ccache");
             bytes = webpData.ToArray();
             File2.WriteAllBytes(path + ".ccache", bytes);
             if(type != Device.Mobile)
-            {
-                PCCaches.Add(path, bytes);
+            {   
+                if(!PCCaches.ContainsKey(Path.GetFileName(path)))
+                PCCaches.TryAdd(Path.GetFileName(path), bytes);
             }
             else
             {
-                MobileCaches.Add(path, bytes);
+                if (!MobileCaches.ContainsKey(Path.GetFileName(path)))
+                    MobileCaches.Add(Path.GetFileName(path), bytes);
             }
             GC.Collect();
         }
@@ -242,6 +239,9 @@ namespace RandomImageAPI.Controllers
                 _ => "application/octet-stream", // 默认 MIME 类型
             };
         }
-
+        private static void LogInfo(HttpRequest request)
+        {
+            Console.WriteLine($"{request.Host} {request.Path} {request.Protocol} {request.Headers.UserAgent}");
+        }
     }
 }
