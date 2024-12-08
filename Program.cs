@@ -1,5 +1,5 @@
 
-using Newtonsoft.Json;
+using System.Text.Json;
 using RandomImageAPI.Utils;
 using System.Diagnostics;
 
@@ -127,7 +127,7 @@ namespace RandomImageAPI
             if (RedirectURL == null && !SelfHosted) throw new NullReferenceException("You did not define --RedirectURL.");
 #pragma warning disable CS8601
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
-            ImageList = ListFetchType ? JsonConvert.DeserializeObject<List<FileInfoModel>>(File.Exists(ImageListFilePath) ? File.ReadAllText(ImageListFilePath) : throw new FileNotFoundException("Generate the file list first!!!")) : FileList.GetAllFiles(ImageFolder);
+            ImageList = ListFetchType ? JsonSerializer.Deserialize<List<FileInfoModel>>(File.Exists(ImageListFilePath) ? File.ReadAllText(ImageListFilePath) : throw new FileNotFoundException("Generate the file list first!!!")) : FileList.GetAllFiles(ImageFolder);
             
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             builder.Services.AddDetection();

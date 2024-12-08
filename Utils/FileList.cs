@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using SixLabors.ImageSharp;
+﻿using SixLabors.ImageSharp;
+using System.Text.Json;
 
 
 namespace RandomImageAPI.Utils
@@ -39,7 +39,7 @@ namespace RandomImageAPI.Utils
 
         public static void SaveFilesToJson(List<FileInfoModel> files, string outputPath)
         {
-            File.WriteAllText(outputPath, JsonConvert.SerializeObject(files, new JsonSerializerSettings { Formatting = Formatting.Indented }));
+            File.WriteAllText(outputPath, JsonSerializer.Serialize(files));
         }
     }
 }
