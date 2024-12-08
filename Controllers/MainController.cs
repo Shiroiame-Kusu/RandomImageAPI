@@ -1,10 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RandomImageAPI.Impl;
-using RandomImageAPI.Utils;
 using SkiaSharp;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Linq;
 using Wangkanai.Detection.Models;
 using Wangkanai.Detection.Services;
 using File2 = System.IO.File;
@@ -15,20 +13,25 @@ namespace RandomImageAPI.Controllers
     [Route("api")]
     public class MainController : Controller
     {
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IDetectionService _detectionService;
-        private static List<MemoryStream> memoryStreams = new();
         private static ConcurrentDictionary<string, Byte[]> PCCaches = new();
         private static Dictionary<string, Byte[]> MobileCaches = new();
         private static Stopwatch stopwatch = new();
-        public MainController(IDetectionService detectionService)
+
+        private  readonly ILogger<MainController> _logger;
+
+        public MainController(IDetectionService detectionService, ILogger<MainController> logger, IHttpContextAccessor httpContextAccessor)
         {
             _detectionService = detectionService;
+            _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
             ClassAccess.MainController = this;
-
         }
+
         public async Task<IActionResult> Index()
-        {
-            LogInfo(Request);
+        {   
+            Log(Request, _httpContextAccessor.HttpContext.Connection.RemoteIpAddress.ToString());
             string devicetype = "";
             var filename = Program.ImageList[Random.Shared.Next(0, Program.ImageList.Count)].FileName;
             if (Program.APISeperated) return Ok(new
@@ -86,7 +89,7 @@ namespace RandomImageAPI.Controllers
         [HttpGet("pc")]
         public async Task<IActionResult> PC()
         {
-            LogInfo(Request);
+            Log(Request, _httpContextAccessor.HttpContext.Connection.RemoteIpAddress.ToString());
             bytes2 = null;
             var what = Program.AutoSeperate != null ? (!(bool)Program.AutoSeperate ? "pc/" : "") : "";
             if (Program.APISeperated)
@@ -131,7 +134,7 @@ namespace RandomImageAPI.Controllers
         [HttpGet("mobile")]
         public async Task<IActionResult> Mobile()
         {
-            LogInfo(Request);
+            Log(Request, _httpContextAccessor.HttpContext.Connection.RemoteIpAddress.ToString());
             bytes3 = null;
             var what = Program.AutoSeperate != null ? (!(bool)Program.AutoSeperate ? "mobile/" : "") : "";
             if (Program.APISeperated)
@@ -199,7 +202,7 @@ namespace RandomImageAPI.Controllers
                 }
                 catch(Exception ex)
                 {
-                    Console.Write(ex);
+                    Log(ex);
                     ImageCompressedA(path,type);
                 }
             }
@@ -239,9 +242,19 @@ namespace RandomImageAPI.Controllers
                 _ => "application/octet-stream", // 默认 MIME 类型
             };
         }
-        private static void LogInfo(HttpRequest request)
+        private static void Log(HttpRequest request,string ip)
         {
-            Console.WriteLine($"{request.Host} {request.Path} {request.Protocol} {request.Headers.UserAgent}");
+            ClassAccess.MainController._logger.LogInformation($"{DateTime.Now} {DateTime.Now - DateTime.UtcNow} {ip} {request.Host} {request.Path} {request.Protocol} {request.Headers.UserAgent}");
+        }
+        private static void Log(Exception ex)
+        {
+            ClassAccess.MainController._logger.LogError(ex.Message);
+            ClassAccess.MainController._logger.LogError(ex.StackTrace);
+            if (ex.InnerException != null)
+            {
+                ClassAccess.MainController._logger.LogError(ex.InnerException.Message);
+                ClassAccess.MainController._logger.LogError(ex.InnerException.StackTrace);
+            }
         }
     }
 }

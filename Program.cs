@@ -1,11 +1,7 @@
-using Newtonsoft.Json.Serialization;
+
 using Newtonsoft.Json;
 using RandomImageAPI.Utils;
-using RandomImageAPI.Impl;
-using System.Runtime.CompilerServices;
-using RandomImageAPI.Controllers;
 using System.Diagnostics;
-using Microsoft.Extensions.Logging;
 
 namespace RandomImageAPI
 {
@@ -29,18 +25,18 @@ namespace RandomImageAPI
         {
             Task task = new(() =>
             {
-                int a = 1000;
+                int a;
                 while (true)
                 {
                     a = 10000;
                     var process = Process.GetCurrentProcess();
                     long workingSet = process.WorkingSet64 / 1024 / 1024;
-                    if (workingSet > 1000)
+                    if (workingSet > 500)
                     {
                         GC.Collect();
                         a = 5000;
                     }
-                    else if (workingSet > 500)
+                    else if (workingSet > 200)
                     {
                         GC.Collect();
                         a = 10000;
@@ -127,25 +123,14 @@ namespace RandomImageAPI
                 }
             }
             WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-            builder.Logging.AddFile(o => o.RootPath = builder.Environment.ContentRootPath);
+            builder.Logging.AddFile(o => o.RootPath = AppDomain.CurrentDomain.BaseDirectory);
             if (RedirectURL == null && !SelfHosted) throw new NullReferenceException("You did not define --RedirectURL.");
 #pragma warning disable CS8601
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
             ImageList = ListFetchType ? JsonConvert.DeserializeObject<List<FileInfoModel>>(File.Exists(ImageListFilePath) ? File.ReadAllText(ImageListFilePath) : throw new FileNotFoundException("Generate the file list first!!!")) : FileList.GetAllFiles(ImageFolder);
             
-
-            
+            builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             builder.Services.AddDetection();
-#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
-            builder.Services.AddControllers();
-            builder.Services.AddControllers().AddNewtonsoftJson(options =>
-            {
-                // ≈‰÷√ Newtonsoft.Json µƒ—°œÓ
-                options.SerializerSettings.ContractResolver = new CamelCasePropertyNamesContractResolver();
-                options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
-                options.SerializerSettings.Formatting = Formatting.Indented;
-            });
-#pragma warning restore IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
             WebApplication app = builder.Build();
             app.UseRouting();
             app.MapControllers();
