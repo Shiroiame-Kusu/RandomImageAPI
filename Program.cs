@@ -127,14 +127,14 @@ namespace RandomImageAPI
                 }
             }
             WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
-            builder.Logging.AddFile(o => o.RootPath = builder.Environment.ContentRootPath);
+            builder.Logging.AddFile(o => o.RootPath = AppDomain.CurrentDomain.BaseDirectory);
             if (RedirectURL == null && !SelfHosted) throw new NullReferenceException("You did not define --RedirectURL.");
 #pragma warning disable CS8601
 #pragma warning disable CS8602 // Dereference of a possibly null reference.
             ImageList = ListFetchType ? JsonConvert.DeserializeObject<List<FileInfoModel>>(File.Exists(ImageListFilePath) ? File.ReadAllText(ImageListFilePath) : throw new FileNotFoundException("Generate the file list first!!!")) : FileList.GetAllFiles(ImageFolder);
-            
+            builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-            
+
             builder.Services.AddDetection();
 #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
             builder.Services.AddControllers();
