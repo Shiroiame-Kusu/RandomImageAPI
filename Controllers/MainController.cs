@@ -201,7 +201,7 @@ namespace RandomImageAPI.Controllers
                 }
                 catch(Exception ex)
                 {
-                    Console.Write(ex);
+                    Log(ex);
                     ImageCompressedA(path,type);
                 }
             }
