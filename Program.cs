@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using RandomImageAPI.Controllers;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using System.Net;
 
 namespace RandomImageAPI
 {
@@ -134,7 +135,7 @@ namespace RandomImageAPI
             ImageList = ListFetchType ? JsonConvert.DeserializeObject<List<FileInfoModel>>(File.Exists(ImageListFilePath) ? File.ReadAllText(ImageListFilePath) : throw new FileNotFoundException("Generate the file list first!!!")) : FileList.GetAllFiles(ImageFolder);
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
-
+            
             builder.Services.AddDetection();
 #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
             builder.Services.AddControllers();
@@ -147,9 +148,10 @@ namespace RandomImageAPI
             });
 #pragma warning restore IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
             WebApplication app = builder.Build();
+            
             app.UseRouting();
             app.MapControllers();
-
+            app.UseMiddleware<RealIpMiddleware>();
             foreach (var item in ImageList)
             {
                 if (item.Ratio > 1)
@@ -170,6 +172,28 @@ namespace RandomImageAPI
 
             app.Run();
 
+        }
+    }
+    public class RealIpMiddleware
+    {
+        private readonly RequestDelegate _next;
+
+        public RealIpMiddleware(RequestDelegate next)
+        {
+            _next = next;
+        }
+
+        public Task Invoke(HttpContext context)
+        {
+            var headers = context.Request.Headers;
+            if (headers.ContainsKey("X-Forwarded-For"))
+            {
+                context.Connection.RemoteIpAddress = IPAddress.Parse(headers["X-Forwarded-For"].ToString().Split(',', StringSplitOptions.RemoveEmptyEntries)[0]);
+            }else if (headers.ContainsKey("X-Real-IP"))
+            {
+                context.Connection.RemoteIpAddress = IPAddress.Parse(headers["X-Real-IP"].ToString());
+            }
+            return _next(context);
         }
     }
 }
