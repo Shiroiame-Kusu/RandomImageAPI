@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Karambolo.Extensions.Logging.File" Version="3.6.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="9.0.0" />
-    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.6" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.7" />
     <PackageReference Include="SkiaSharp" Version="3.116.0" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.116.0" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.116.0" />
